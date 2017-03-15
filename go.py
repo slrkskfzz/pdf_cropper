@@ -1,22 +1,35 @@
 import sys
 import os
+import platform
 from PIL import Image
 from PyPDF2 import PdfFileWriter, PdfFileReader
 
-# You should replace all \\ into / if you're using linux
+if platform.system() == "Windows":
+    dirsep = "\\"
+    gsexe  = "gswin64c"
+    delexe = "del"
+else:
+    dirsep = "/"
+    gsexe  = "gs"
+    delexe = "rm"
 
 try:
     inname = sys.argv[1]
+    print("Input file %s" % inname)
     outname= inname.replace(".pdf", "_out.pdf")
-    workdir = inname[0:inname.rfind("\\")]
+    if inname.rfind(dirsep) != -1:
+        workdir = inname[0:inname.rfind(dirsep)] + dirsep
+    else:
+        workdir = "." + dirsep
+    print("Working dir %s" % workdir)
     
     print("Obtaining the positions for cropping")
     
-    comm = "gswin64c -dFirstPage=1 -dLastPage=1 -dBATCH -dNOPAUSE -sDEVICE=pnggray -r300 -dUseCropBox -sOutputFile=%s\\temp-%%03d.png  %s" % (workdir, inname)
-    #print("comm : %s" % comm)
+    comm = "%s -dFirstPage=1 -dLastPage=1 -dBATCH -dNOPAUSE -sDEVICE=pnggray -r300 -dUseCropBox -sOutputFile=%stemp-%%03d.png  %s" % (gsexe, workdir, inname)
+    print("comm : %s" % comm)
     os.system(comm)
     
-    temppath = "%s\\temp-001.png" % workdir
+    temppath = "%stemp-001.png" % (workdir)
 
     I = Image.open(temppath)
     W, H = I.size
@@ -75,10 +88,17 @@ try:
             xe = x
             break
 
-    os.system("del \"%s\"" % temppath)
-    print("del \"%s\"" % temppath)
+    os.system("%s \"%s\"" % (delexe, temppath))
+    print("%s \"%s\"" % (delexe, temppath))
 
-
+    xs *= 1.0
+    xe *= 1.0
+    ys1*= 1.0
+    ye1*= 1.0
+    ys2*= 1.0
+    ye2*= 1.0
+    
+    
     xs /= W
     xe /= W
 
@@ -126,6 +146,7 @@ try:
 except Exception as e:
     print("Unknown error was occured %s" % str(e))
     os.system("PAUSE")
+    
 
 
 
